@@ -21,3 +21,8 @@ class QuestionCreate(BaseModel):
         if not v or not v.strip():
             raise ValueError('빈값 금지')
         return v
+
+
+class QuestionList(BaseModel):
+    total: int=0
+    question_list: list[Question] = []
