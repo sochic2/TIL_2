@@ -11,8 +11,8 @@ class Question(Base):
     subject = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     create_date = Column(DateTime, nullable=False)
-    user_id = Column(Integer, ForeignKey('user.id'), nullable=True)
-    user = relationship('User', back_populates='question_users')
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=True)
+    user = relationship("User", backref="question_users")
 
 
 class Answer(Base):
@@ -24,7 +24,7 @@ class Answer(Base):
     question_id = Column(Integer, ForeignKey('question.id'))
     question = relationship("Question", backref="answers")
     user_id = Column(Integer, ForeignKey('user.id'), nullable=True)
-    user = relationship('User', back_populates='answer_users')
+    user = relationship('User', backref='answer_users')
 
 
 class User(Base):
