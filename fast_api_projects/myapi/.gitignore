@@ -1,8 +1,8 @@
 .idea
-myapi.db
+#myapi.db
 *.pyc
 __pycache__
-migrations
-alembic.ini
+#migrations
+#alembic.ini
 logs
 .deta
