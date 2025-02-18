@@ -202,6 +202,8 @@ a = v1.read_namespaced_pod_log(
 
 - deployment, service, ingress  순으로 생성한다고 가정하고, yaml에 필요한 value를 받아서 생성하는 방식으로 설계
 
+- deployment의 spec.selector.matchLabels.app의 값을 service의 spec.selctor.app에 명시해서 연결되고, service의 metadata.name을 ingress의 spec.rules.http.paths.backend.service.name에 명시하여 deployment-service, service-ingress가 연결
+
 
 
 - 각 deployment, service, ingress, namespace 삭제 기능 구현 예정
@@ -212,4 +214,5 @@ a = v1.read_namespaced_pod_log(
 
 - apidocs에서 description, 입력 포맷 등에대한 제한이나 그런 것들이 추가적으로 필요
 - response되는 값들에 대한 정의 논의 필요
--  
+-  kubectl get (deployment, service, ingress), kubectl describe(deployment, service, ingress)  이런 애들 추가해서 보여주기?
+-  각 요소들이 정상적으로 작동중인 상태인지 보여주기? 
