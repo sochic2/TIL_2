@@ -435,11 +435,13 @@ $ kubectl apply -f metallb_config.yaml
   $ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
   $ helm repo update
   $ helm install ingress-nginx ingress-nginx/ingress-nginx \
-    --namespace ingress-nginx --create-namespace
+    --namespace ingress-nginx --create-namespace --set controller.service.type=LoadBalancer
   ```
 
   - Helm 차트에 정의된 기본 설정으로 실행됨.
   - ` --set controller.service.type=LoadBalancer`를 빼먹고 설치해서 후에` kubectl patch svc ingress-nginx-controller -n ingress-nginx \  -p '{"spec": {"type": "LoadBalancer"}}'`로 변경
+
+
 
 - rancher_ingress.yaml
 
@@ -480,8 +482,9 @@ spec:
   - 다른 애플리케이션, 시스템 리소스와 충돌하지 않도록 하고, 권장되는 표준 구성
 
 - `kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.3/cert-manager.yaml` 
+  
   - 랜처는 HTTPS를 기본적으로 사용하여 인증서 설정, cert-manager 설치
-
+  
 - `kubectl get pods --namespace cert-manager`
 
   - cert-manager 준비 확인
@@ -499,6 +502,43 @@ spec:
     --set hostname=rancher.rbpk3s.com \
     --set replicas=2
   ```
+
+  
+
+  - rancher_ingress.yaml
+
+  ```yaml
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: rancher-ingress
+    namespace: cattle-system   # ingress는 같은 네임스페이스 내에서 서비스 참조 가능
+    annotations:               
+      nginx.ingress.kubernetes.io/rewrite-target: /
+  spec:
+    ingressClassName: nginx   # 이거 누락했더니 traefik이 Ingress Class로잡혀서 설정 꼬임
+    tls:
+    - hosts:
+      - rancher.rbpk3s.com
+      secretName: wildcard-cert   # 처음에 ingress-nginx에 두고, 이름만 썼더니 apply시에는 에러 
+    rules:                        # 안나는데 ingress-controller 로그 봤더니 못찾는다고 에러찍힘
+    - host: rancher.rbpk3s.com
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: rancher
+              port:
+                number: 80
+  ```
+
+  - `kubectl describe ingress rancher-ingress -n cattle-system` 세부 내용 확인
+
+  
+
+  
 
   ```bash
   $ kubectl get service -n cattle-system
@@ -766,9 +806,9 @@ spec:
   storageClassName: nfs-storage
 ```
 
-- pv에 정의된 위치에 디렉토리 생성 후 pv, pvc apply
 
 
+- 위의 파일 정의 후 namespace 생성, tls secret 생성, pv, pvc, 생성, helm chart value 변경 후 차례대로 적용
 
 ```bash
 $ kubectl create namespace harbor
@@ -910,4 +950,34 @@ helm install harbor bitnami/harbor -n harbor -f harbor_values.yaml --debug --dry
 - 우선,  hellm chart, 'https://artifacthub.io/packages/helm/bitnami/harbor' 이런 곳에 기본적이 값 설정 방식은 존재. 혹은 values전체를 다운받아 확인하거나 github에서도 확인 가능.
 - values.yaml에 주석으로 설명이 있긴 하지만 정확한 사용 방식을 모를 때는 templates로 기 정의된 형태를 보면 더 확실하게 어떤식으로 값이 들어가는지 확인 가능
 - 예를들어 ingress를 생성해줄 yaml의 template을 확인해보면  values.yaml에 값을 어떻게 넣어야 할지 유추가 더 용이할 수 있음
+
+
+
+
+
+
+
+ExecStart=/usr/local/bin/k3s server --docker --write-kubeconfig-mode 0644
+
+
+
+- 포트포워딩 해둔 상태이고
+
+```tex
+61.85.103.146 rancher.rbpk3s.com
+61.85.103.146 harbor.rbpk3s.com
+61.85.103.146 k3sapitest.com
+
+아래와같이 로그인
+https://rancher.rbpk3s.com:18443/
+```
+
+
+
+- .kube/config 집에서 사용시 이런식으로 세팅해서 tls 우회가능
+
+```yam
+    server: https://xx.xx.xx.xx:xxxxx
+    insecure-skip-tls-verify: true
+```
 
